@@ -20,7 +20,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
-const bchdTestNode = "bchd-mainnet.electroncash.de:8335"
+const bchdTestNode = "bchd.greyh.at:8335"
 const logRequestJSON = true // log JSON of request and responses (to glog)
 
 const dustLimit = 546
@@ -43,6 +43,9 @@ func TestMain(m *testing.M) {
 	// Create the app context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	testProxyAddr := ":8282"
+	proxyAddr = &testProxyAddr
 
 	proxy := &GrpcProxy{
 		ctx:    ctx,
