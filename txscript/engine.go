@@ -127,6 +127,9 @@ const (
 	// ScriptVerifyNativeIntrospection enables the suite of native introspection
 	// opcodes.
 	ScriptVerifyNativeIntrospection
+
+	// ScriptIncreasedVMLimits enables the upgrade '25 vm limits
+	ScriptIncreasedVMLimits
 )
 
 // HasFlag returns whether the ScriptFlags has the passed flag set.
@@ -158,6 +161,7 @@ type Engine struct {
 	txIdx           int
 	condStack       []int
 	numOps          int
+	opCost          int
 	flags           ScriptFlags
 	sigCache        *SigCache
 	hashCache       *TxSigHashes
@@ -204,11 +208,15 @@ func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
 
 	// Note that this includes OP_RESERVED which counts as a push operation.
 	if pop.opcode.value > OP_16 {
-		vm.numOps++
-		if vm.numOps > MaxOpsPerScript {
-			str := fmt.Sprintf("exceeded max operation limit of %d",
-				MaxOpsPerScript)
-			return scriptError(ErrTooManyOperations, str)
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += 100
+		} else {
+			vm.numOps++
+			if vm.numOps > MaxOpsPerScript {
+				str := fmt.Sprintf("exceeded max operation limit of %d",
+					MaxOpsPerScript)
+				return scriptError(ErrTooManyOperations, str)
+			}
 		}
 
 	} else if len(pop.data) > MaxScriptElementSize {
@@ -407,6 +415,7 @@ func (vm *Engine) Step() (done bool, err error) {
 		_ = vm.astack.DropN(vm.astack.Depth())
 
 		vm.numOps = 0 // number of ops is per script.
+		vm.opCost = 0
 		vm.scriptOff = 0
 		if vm.scriptIdx == 0 && vm.bip16 {
 			vm.scriptIdx++
@@ -833,6 +842,7 @@ func (vm *Engine) Clone() *Engine {
 		scriptOff:   vm.scriptOff,
 		scriptIdx:   vm.scriptIdx,
 		numOps:      vm.numOps,
+		opCost:      vm.opCost,
 		lastCodeSep: vm.lastCodeSep,
 		tx:          vm.tx,
 		bip16:       vm.bip16,
