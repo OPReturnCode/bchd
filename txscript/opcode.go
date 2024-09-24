@@ -1381,6 +1381,9 @@ func opcodeRoll(op *parsedOpcode, vm *Engine) error {
 	if err != nil {
 		return err
 	}
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += int(vm.dstack.Depth())
+	}
 
 	return vm.dstack.RollN(val.Int32())
 }
@@ -1604,6 +1607,12 @@ func opcodeAnd(op *parsedOpcode, vm *Engine) error {
 		c[i] = a[i] & b[i]
 	}
 	vm.dstack.PushByteArray(c)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		//vm.opCost += result.size() TODO VMLIMITS
+		vm.opCost += len(c)
+	}
+
 	return nil
 }
 
@@ -1627,6 +1636,12 @@ func opcodeOr(op *parsedOpcode, vm *Engine) error {
 		c[i] = a[i] | b[i]
 	}
 	vm.dstack.PushByteArray(c)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		//vm.opCost += result.size() TODO VMLIMITS
+		vm.opCost += len(c)
+	}
+
 	return nil
 }
 
@@ -1650,6 +1665,12 @@ func opcodeXor(op *parsedOpcode, vm *Engine) error {
 		c[i] = a[i] ^ b[i]
 	}
 	vm.dstack.PushByteArray(c)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		//vm.opCost += result.size() TODO VMLIMITS
+		vm.opCost += len(c)
+	}
+
 	return nil
 }
 
@@ -1697,6 +1718,11 @@ func opcode1Add(op *parsedOpcode, vm *Engine) error {
 	}
 
 	vm.dstack.PushInt(m + 1)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len((m + 1).Bytes())
+	}
+
 	return nil
 }
 
@@ -1710,6 +1736,10 @@ func opcode1Sub(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 	vm.dstack.PushInt(m - 1)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len((m - 1).Bytes())
+	}
 
 	return nil
 }
@@ -1725,6 +1755,11 @@ func opcodeNegate(op *parsedOpcode, vm *Engine) error {
 	}
 
 	vm.dstack.PushInt(-m)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len((-m).Bytes())
+	}
+
 	return nil
 }
 
@@ -1742,6 +1777,11 @@ func opcodeAbs(op *parsedOpcode, vm *Engine) error {
 		m = -m
 	}
 	vm.dstack.PushInt(m)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len((m).Bytes())
+	}
+
 	return nil
 }
 
@@ -1765,8 +1805,17 @@ func opcodeNot(op *parsedOpcode, vm *Engine) error {
 
 	if m == 0 {
 		vm.dstack.PushInt(scriptNum(1))
+
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len((scriptNum(1)).Bytes())
+		}
+
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len((scriptNum(0)).Bytes())
+		}
 	}
 	return nil
 }
@@ -1787,6 +1836,11 @@ func opcode0NotEqual(op *parsedOpcode, vm *Engine) error {
 		m = 1
 	}
 	vm.dstack.PushInt(m)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len(m.Bytes())
+	}
+
 	return nil
 }
 
@@ -1811,6 +1865,11 @@ func opcodeAdd(op *parsedOpcode, vm *Engine) error {
 	}
 	if (c > v0) == (v1 > 0) {
 		vm.dstack.PushInt(c)
+
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(c.Bytes())
+		}
+
 		return nil
 	}
 	return scriptError(ErrIntegerOverflow, "integer overflow")
@@ -1838,6 +1897,11 @@ func opcodeSub(op *parsedOpcode, vm *Engine) error {
 	}
 	if (c < v1) == (v0 > 0) {
 		vm.dstack.PushInt(c)
+
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(c.Bytes())
+		}
+
 		return nil
 	}
 	return scriptError(ErrIntegerOverflow, "integer overflow")
@@ -1864,6 +1928,11 @@ func opcodeMul(op *parsedOpcode, vm *Engine) error {
 
 	if a == 0 || b == 0 {
 		vm.dstack.PushInt(0)
+
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
+
 		return nil
 	}
 	c := a * b
@@ -1873,6 +1942,11 @@ func opcodeMul(op *parsedOpcode, vm *Engine) error {
 	if (c < 0) == ((a < 0) != (b < 0)) {
 		if c/b == a {
 			vm.dstack.PushInt(c)
+
+			if vm.hasFlag(ScriptIncreasedVMLimits) {
+				vm.opCost += len(c.Bytes())
+			}
+
 			return nil
 		}
 	}
@@ -1898,6 +1972,11 @@ func opcodeDiv(op *parsedOpcode, vm *Engine) error {
 		return scriptError(ErrNumberTooSmall, "divide by zero")
 	}
 	vm.dstack.PushInt(a / b)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len((a / b).Bytes())
+	}
+
 	return nil
 }
 
@@ -1920,6 +1999,11 @@ func opcodeMod(op *parsedOpcode, vm *Engine) error {
 		return scriptError(ErrNumberTooSmall, "mod by zero")
 	}
 	vm.dstack.PushInt(a % b)
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len((a % b).Bytes())
+	}
+
 	return nil
 }
 
@@ -1943,8 +2027,14 @@ func opcodeBoolAnd(op *parsedOpcode, vm *Engine) error {
 
 	if v0 != 0 && v1 != 0 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 
 	return nil
@@ -1970,8 +2060,14 @@ func opcodeBoolOr(op *parsedOpcode, vm *Engine) error {
 
 	if v0 != 0 || v1 != 0 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 
 	return nil
@@ -1995,8 +2091,14 @@ func opcodeNumEqual(op *parsedOpcode, vm *Engine) error {
 
 	if v0 == v1 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 
 	return nil
@@ -2036,8 +2138,14 @@ func opcodeNumNotEqual(op *parsedOpcode, vm *Engine) error {
 
 	if v0 != v1 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 
 	return nil
@@ -2061,8 +2169,14 @@ func opcodeLessThan(op *parsedOpcode, vm *Engine) error {
 
 	if v1 < v0 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 
 	return nil
@@ -2086,8 +2200,14 @@ func opcodeGreaterThan(op *parsedOpcode, vm *Engine) error {
 
 	if v1 > v0 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 	return nil
 }
@@ -2110,8 +2230,14 @@ func opcodeLessThanOrEqual(op *parsedOpcode, vm *Engine) error {
 
 	if v1 <= v0 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 	return nil
 }
@@ -2134,8 +2260,14 @@ func opcodeGreaterThanOrEqual(op *parsedOpcode, vm *Engine) error {
 
 	if v1 >= v0 {
 		vm.dstack.PushInt(scriptNum(1))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(1).Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(scriptNum(0).Bytes())
+		}
 	}
 
 	return nil
@@ -2158,8 +2290,14 @@ func opcodeMin(op *parsedOpcode, vm *Engine) error {
 
 	if v1 < v0 {
 		vm.dstack.PushInt(v1)
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(v1.Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(v0)
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(v0.Bytes())
+		}
 	}
 
 	return nil
@@ -2182,8 +2320,14 @@ func opcodeMax(op *parsedOpcode, vm *Engine) error {
 
 	if v1 > v0 {
 		vm.dstack.PushInt(v1)
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(v1.Bytes())
+		}
 	} else {
 		vm.dstack.PushInt(v0)
+		if vm.hasFlag(ScriptIncreasedVMLimits) {
+			vm.opCost += len(v0.Bytes())
+		}
 	}
 
 	return nil
@@ -2218,6 +2362,11 @@ func opcodeWithin(op *parsedOpcode, vm *Engine) error {
 	} else {
 		vm.dstack.PushInt(scriptNum(0))
 	}
+
+	if vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.opCost += len((maxVal + minVal + x).Bytes())
+	}
+
 	return nil
 }
 
@@ -2493,7 +2642,11 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			numPubKeys, MaxPubKeysPerMultiSig)
 		return scriptError(ErrInvalidPubKeyCount, str)
 	}
-	vm.numOps += numPubKeys
+
+	if !vm.hasFlag(ScriptIncreasedVMLimits) {
+		vm.numOps += numPubKeys
+	}
+
 	if vm.numOps > MaxOpsPerScript {
 		str := fmt.Sprintf("exceeded max operation limit of %d",
 			MaxOpsPerScript)

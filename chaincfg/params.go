@@ -154,6 +154,8 @@ type Params struct {
 	AxionActivationHeight         int32  // Nov 15, 2020 hardfork
 	CosmicInflationActivationTime uint64 // May 15, 2022 hardfork
 
+	VMLimitsAndBigIntUpgradeActivationTime uint64
+
 	// CoinbaseMaturity is the number of blocks required before newly mined
 	// coins (coinbase transactions) can be spent.
 	CoinbaseMaturity uint16
@@ -287,6 +289,8 @@ var MainNetParams = Params{
 	AxionActivationHeight:       661647, // 00000000000000000083ed4b7a780d59e3983513215518ad75654bb02deee62f
 
 	CosmicInflationActivationTime: 1652616000,
+
+	VMLimitsAndBigIntUpgradeActivationTime: 1747310400,
 
 	CoinbaseMaturity:                     100,
 	SubsidyReductionInterval:             210000,
@@ -650,6 +654,8 @@ var ChipNetParams = Params{
 	AxionActivationHeight:       16844,
 
 	CosmicInflationActivationTime: 1637694000,
+
+	VMLimitsAndBigIntUpgradeActivationTime: 1731672000,
 
 	CoinbaseMaturity:                     100,
 	SubsidyReductionInterval:             210000,
